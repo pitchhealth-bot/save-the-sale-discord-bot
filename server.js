@@ -2,7 +2,6 @@ const express = require("express");
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 
 const app = express();
-
 app.use(express.json());
 
 const client = new Client({
@@ -21,7 +20,6 @@ app.get("/", (req, res) => {
 
 app.post("/send-dm", async (req, res) => {
     try {
-
         const secret = req.headers["x-airtable-secret"];
 
         if (secret !== process.env.AIRTABLE_SECRET) {
@@ -39,7 +37,8 @@ app.post("/send-dm", async (req, res) => {
             planName,
             onHoldDate,
             deadline,
-            onHoldReason
+            onHoldReason,
+            actionNeeded
         } = req.body;
 
         if (!discordUserId) {
@@ -56,52 +55,26 @@ app.post("/send-dm", async (req, res) => {
         const embed = new EmbedBuilder()
             .setTitle("🚨 SAVE THE SALE | ON HOLD ALERT")
             .setDescription(
-                "A policy has been placed **On-Hold - Resubmission Needed** and requires immediate attention."
+                [
+                    "A policy has been placed **On-Hold - Resubmission Needed** and requires immediate attention.",
+                    "",
+                    `**Agent:** ${agentName || "N/A"}`,
+                    `**Member:** ${memberFullName || "N/A"}`,
+                    "",
+                    `**Carrier:** ${carrier || "N/A"}`,
+                    `**Plan/Product:** ${planName || "N/A"}`,
+                    "",
+                    `**On-Hold Date:** ${onHoldDate || "N/A"}`,
+                    `**Deadline:** ${deadline || "N/A"}`,
+                    "",
+                    "**Resubmission Reason:**",
+                    onHoldReason || "N/A",
+                    "",
+                    "**Action Needed:**",
+                    actionNeeded || "No action specified."
+                ].join("\n")
             )
             .setColor(0xE74C3C)
-            .addFields(
-                {
-                    name: "Agent",
-                    value: agentName || "N/A",
-                    inline: true
-                },
-                {
-                    name: "Member",
-                    value: memberFullName || "N/A",
-                    inline: true
-                },
-                {
-                    name: "Carrier",
-                    value: carrier || "N/A",
-                    inline: true
-                },
-                {
-                    name: "Plan/Product",
-                    value: planName || "N/A",
-                    inline: true
-                },
-                {
-                    name: "On-Hold Date",
-                    value: onHoldDate || "N/A",
-                    inline: true
-                },
-                {
-                    name: "Deadline",
-                    value: deadline || "N/A",
-                    inline: true
-                },
-                {
-                    name: "Resubmission Reason",
-                    value: onHoldReason || "N/A",
-                    inline: false
-                },
-                {
-                    name: "Action Needed",
-                    value:
-                        "Please review the issue and take the required action as soon as possible.",
-                    inline: false
-                }
-            )
             .setTimestamp();
 
         await user.send({
@@ -116,7 +89,6 @@ app.post("/send-dm", async (req, res) => {
         });
 
     } catch (error) {
-
         console.error("❌ DM ERROR:", error);
 
         return res.status(500).json({
